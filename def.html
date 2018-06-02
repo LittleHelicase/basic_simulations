@@ -1,0 +1,102 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.5.0/lodash.min.js"></script>
+<script src="b64.js"></script>
+<script src="LZWEncoder.js"></script>
+<script src="NeuQuant.js"></script>
+<script src="GIFEncoder.js"></script>
+<button onclick="start()">Start</button>
+<button onclick="stop()">Stop</button>
+<button onclick="reset()">Reset</button>
+<button onclick="replay()">Replay</button>
+<button onclick="gifgif()">GIF!</button>
+Schritt <span id="step">0</span>
+<br/>
+<hr/>
+<canvas id="canv" width="200" height="700"></canvas>
+<img id="gif" />
+<script src="deformable.js"></script>
+<script>
+var encoder = new GIFEncoder();
+encoder.setRepeat(0); //auto-loop
+encoder.setDelay(20);
+encoder.start();
+
+function gifgif(){
+  encoder.finish();
+  document.getElementById('gif').src = 'data:image/gif;base64,'+encode64(encoder.stream().getData())
+}
+function drawDeformable(def){
+  var canv = document.getElementById("canv");
+  var ctx = canv.getContext('2d');
+  var yShift = -300;
+  var xShift = -200
+  ctx.clearRect(0,0,1000,1000);
+  ctx.fillStyle = "white";
+  ctx.fillRect(0,0,1000,1000);
+  var ps = def.particles;
+  ctx.fillStyle = "black";
+  for(var i=0; i<ps.length; i++){
+    ctx.fillRect((ps[i].pos[0])*40+250+xShift,(15 - ps[i].pos[1])*40+yShift,3,3);
+  }
+
+  ctx.fillStyle = "gray";
+  ctx.fillRect(0+xShift,15*40+5+yShift,1000,20);
+}
+
+var stepDom = document.getElementById("step");
+var store = [];
+var replIndex = 0;
+
+function update(){
+  work();
+  if(curStep%20 == 0){
+    store.push(defObj);
+  }
+  if(curStep % 1 == 0){
+    drawDeformable(defObj);
+  }
+  if(curStep > 1400 && curStep % 15 == 0){
+    var canv = document.getElementById("canv");
+    var ctx = canv.getContext('2d');
+    encoder.addFrame(ctx);
+  }
+  stepDom.textContent = curStep;
+}
+
+function replayUpdate(){
+  if(replIndex >= store.length){
+    stop();
+  }
+  drawDeformable(store[replIndex]);
+  stepDom.textContent = (replIndex*10);
+  replIndex++;
+}
+
+
+var intervalID = null;
+var replIntervalID = null;
+
+function start(){
+  stop();
+  intervalID = setInterval(update, 10);
+}
+function stop(){
+  clearInterval(intervalID);
+  clearInterval(replIntervalID);
+}
+
+function reset(){
+  initialize();
+  defObj.particles[0].v[0] = -30;
+  defObj.particles[1].v[0] = -20;
+  defObj.particles[2].v[0] = -10;
+  defObj.particles[defObj.particles.length-1].v[0] = 30;
+  stepDom.textContent = curStep;
+  drawDeformable(defObj);
+}
+function replay(){
+  stop();
+  replIndex = 0;
+  replIntervalID = setInterval(replayUpdate,10);
+}
+reset();
+</script>

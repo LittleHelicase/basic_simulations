@@ -1,0 +1,99 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.5.0/lodash.min.js"></script>
+<script src="b64.js"></script>
+<script src="LZWEncoder.js"></script>
+<script src="NeuQuant.js"></script>
+<script src="GIFEncoder.js"></script>
+<button onclick="start()">Start</button>
+<button onclick="stop()">Stop</button>
+<button onclick="reset()">Reset</button>
+<button onclick="replay()">Replay</button>
+<button onclick="gifgif()">GIF!</button>
+Schritt <span id="step">0</span>
+<br/>
+<hr/>
+<canvas id="canv" width="300" height="400"></canvas>
+<img id="gif" />
+<script src="water.js"></script>
+<script>
+var encoder = new GIFEncoder();
+encoder.setRepeat(0); //auto-loop
+encoder.setDelay(20);
+encoder.start();
+function gifgif(){
+  encoder.finish();
+  document.getElementById('gif').src = 'data:image/gif;base64,'+encode64(encoder.stream().getData())
+}
+function drawState(state){
+  var canv = document.getElementById("canv");
+  var ctx = canv.getContext('2d');
+  ctx.clearRect(0,0,1000,1000);
+  ctx.fillStyle = "white";
+  ctx.fillRect(0,0,1000,1000);
+  var p = state.positions;
+  var xShift = -350;
+  var yShift = -20;
+  ctx.fillStyle="black";
+  for(var i=0; i<p.length; i++){
+    ctx.fillRect((p[i][0]+50)*10-1 + xShift,(p[i][1]+5)*10-1 + yShift,2,2);
+  }
+  ctx.fillStyle="red";
+  var p = adhesion;
+  for(var i=0; i<p.length; i++){
+    ctx.fillRect((p[i][0]+50)*10-1+xShift,(p[i][1]+5)*10-1 + yShift,2,2);
+  }
+  ctx.fillStyle="gray";
+  ctx.fillRect(0+xShift,0+yShift,1000,5*10)
+}
+
+var stepDom = document.getElementById("step");
+var store = [];
+var replIndex = 0;
+
+function update(){
+  work();
+  store.push(_.cloneDeep(curState));
+  if(curStep % 1 == 0){
+    drawState(curState);
+  }
+  if(curStep % 1 == 0){
+    var canv = document.getElementById("canv");
+    var ctx = canv.getContext('2d');
+    encoder.addFrame(ctx);
+  }
+  stepDom.textContent = curStep;
+}
+
+function replayUpdate(){
+  if(replIndex >= store.length){
+    stop();
+  }
+  drawState(store[replIndex]);
+  stepDom.textContent = replIndex;
+  replIndex++;
+}
+
+
+var intervalID = null;
+var replIntervalID = null;
+
+function start(){
+  stop();
+  intervalID = setInterval(update, 10);
+}
+function stop(){
+  clearInterval(intervalID);
+  clearInterval(replIntervalID);
+}
+
+function reset(){
+  initialize();
+  stepDom.textContent = curStep;
+  drawState(curState);
+}
+function replay(){
+  stop();
+  replIndex = 0;
+  replIntervalID = setInterval(replayUpdate,10);
+}
+drawState(curState);
+</script>

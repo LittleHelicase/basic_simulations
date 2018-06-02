@@ -1,0 +1,76 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.5.0/lodash.min.js"></script>
+<button onclick="start()">Start</button>
+<button onclick="stop()">Stop</button>
+<button onclick="reset()">Reset</button>
+<button onclick="replay()">Replay</button>
+Schritt <span id="step">0</span>
+<br/>
+<hr/>
+<canvas id="canv" width="1000" height="1000"></canvas>
+<script src="water_basin.js"></script>
+<script>
+function drawState(state){
+  var canv = document.getElementById("canv");
+  var ctx = canv.getContext('2d');
+  ctx.clearRect(0,0,1000,1000);
+  var p = state.positions;
+  ctx.fillStyle="black";
+  for(var i=0; i<p.length; i++){
+    ctx.fillRect((p[i][0]+50)*10,(p[i][1]+5)*10,1,1);
+  }
+  ctx.fillStyle="red";
+  var p = adhesion;
+  for(var i=0; i<p.length; i++){
+    ctx.fillRect((p[i][0]+50)*10,(p[i][1]+5)*10,1,1);
+  }
+  ctx.fillStyle="gray";
+  ctx.fillRect(0,0,1000,5*10)
+}
+
+var stepDom = document.getElementById("step");
+var store = [];
+var replIndex = 0;
+
+function update(){
+  work();
+  store.push(_.cloneDeep(curState));
+  if(curStep % 1 == 0){
+    drawState(curState);
+  }
+  stepDom.textContent = curStep;
+}
+
+function replayUpdate(){
+  if(replIndex >= store.length){
+    stop();
+  }
+  drawState(store[replIndex]);
+  stepDom.textContent = replIndex;
+  replIndex++;
+}
+
+
+var intervalID = null;
+var replIntervalID = null;
+
+function start(){
+  stop();
+  intervalID = setInterval(update, 10);
+}
+function stop(){
+  clearInterval(intervalID);
+  clearInterval(replIntervalID);
+}
+
+function reset(){
+  initialize();
+  stepDom.textContent = curStep;
+  drawState(curState);
+}
+function replay(){
+  stop();
+  replIndex = 0;
+  replIntervalID = setInterval(replayUpdate,10);
+}
+drawState(curState);
+</script>
