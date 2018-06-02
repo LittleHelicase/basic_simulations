@@ -24,13 +24,13 @@ normal is always upwards.
 
 <h2><a href="https://littlehelicase.github.io/basic_simulations/heightfield.html">Heighfield Water</a> <a href="https://littlehelicase.github.io/basic_simulations/hf.html">(on a sphere)</a></h2>
 <a href="https://littlehelicase.github.io/basic_simulations/hf.html">
-    <img src="heightfield.png" align="left">
-</a>
-<a href="https://littlehelicase.github.io/basic_simulations/hf.html">
-    <img src="hf.png" align="right">
+    <img src="hf.png" align="right" width="150">
 </a>
 An interactive heightfield water implementation on a sphere with bouncy clouds.
 Basics for implementing heightfield water are explained <a href="https://docs.google.com/presentation/d/e/2PACX-1vRqCzLIblrIKst1_O7FRb_gl0nvEratD60vNZrwbRJV2hdtYbc2JjEGCRxeKV218ipkdw5aWDqxwXvL/pub?start=false&loop=false&delayms=60000">here in german</a>.
+<a href="https://littlehelicase.github.io/basic_simulations/hf.html">
+    <img src="heightfield.png" width="390">
+</a>
 <h2><a href="https://littlehelicase.github.io/basic_simulations/water.html">Fluid via microscopic-potential</a></h2>
 <a href="https://littlehelicase.github.io/basic_simulations/water.html">
     <img src="gif/water-quart.gif" style="float:right" height="300" align="right"/>
