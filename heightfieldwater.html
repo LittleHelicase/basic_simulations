@@ -1,0 +1,237 @@
+<!DOCTYPE HTML>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <style type="text/css">
+            body { margin: 0; font-size: 2em; background-color: white; }
+            #quit { background-color: gray; color: white; font-weight: bold; display: block; text-align: right; }
+        </style>
+
+    </head>
+    <body>
+
+        <canvas id="drawArea" width="800" height="150"></canvas>
+        <script type="text/javascript">
+            var res = 120;
+            var width = 6;
+            var ground = new Array(res);
+            var sortedGrounds = new Array(res);
+            var heights = new Array(res);
+            var vels = new Array(res);
+            var newheights = new Array(res);
+            var newvels = new Array(res);
+            var context;
+            var g = 100;
+            var potEnB = 0;
+            var k = 1;
+            var hoverIndex = -1;
+            var click = false;
+            var selWidth=10;
+            var selHeight=20;
+            var simStarted= false;
+            var heightScale = 1.5;
+            function heightLeft(i)
+            {
+                if(i > 0 && heights[i-1] > 0)
+                    return heights[i-1] + ground[i-1];
+                else if(i == 0 || ground[i-1] > heights[i] + ground[i])
+                    return heights[i] + ground[i];
+                else
+                    return ground[i-1]
+            }
+            function heightRight(i)
+            {
+                if(i < res-1 && heights[i+1] > 0)
+                    return heights[i+1] + ground[i+1];
+                else if(i == res-1 || ground[i+1] > heights[i] + ground[i])
+                    return heights[i] + ground[i];
+                else
+                    return ground[i+1]
+            }
+            function distributeEnergy(potEnB, kinEnB)
+            {
+                var potEn = 0;
+                var kinEn = 0;
+                var heightsAboveZero = 0;
+                for (var i = 0; i < heights.length; i++)
+                {
+                    potEn += g*heights[i];
+                    kinEn += 0.5*vels[i]*vels[i];
+                    if(heights[i] > 0)
+                        heightsAboveZero++;
+                }
+                energyDiffPerHeight = (potEnB + kinEnB - potEn - kinEn)/heightsAboveZero;
+                heightDiff = energyDiffPerHeight/g;
+                for(var i=0; i<heights.length; i++){
+                    if(heights[i] > 0)
+                        heights[i] += heightDiff;
+                }
+            }
+            function simulate()
+            {
+                var sumHeight = 0;
+                context.clearRect(0,0,800,500);
+                for (var i = 0; i < heights.length; i++)
+                {
+                    diff = 0.5*(heightLeft(i)+heightRight(i)) - heights[i]-ground[i];
+                    if(heights[i] > 0 || diff > 0)
+                        vels[i] += diff;
+                    vels[i] *= 0.99;
+                }
+                var kinEnB = 0;
+                for (var i = 0; i < heights.length; i++)
+                {
+                    heights[i] += vels[i];
+                    // attach springs that pull the heights back to the surface
+                    if(heights[i] < 0)
+                    {
+                        vels[i] -= heights[i];
+                        heights[i] = 0;
+                    }
+                    kinEnB += 0.5*vels[i]*vels[i];
+                }
+                distributeEnergy(potEnB, kinEnB);
+
+                draw();
+                click = false;
+                setTimeout('simulate()', 40);
+            }
+            function draw()
+            {
+                for (var i = 0; i < heights.length; i++)
+                {
+                    context.beginPath();
+                    context.rect(10+i*width, (50-ground[i])*heightScale, width, -heights[i]*heightScale);
+                    context.fillStyle = '#DE565F';
+                    context.fill();
+                    context.lineWidth = 1;
+                    context.strokeStyle = 'black';
+                    context.stroke();
+
+                    if(hoverIndex != -1 && Math.abs(hoverIndex -i)<selWidth){
+                        var hHeight = selHeight*Math.exp(-(i-hoverIndex)*(i-hoverIndex)/selWidth);
+                        context.beginPath();
+                        context.rect(10+i*width, (50-ground[i]-heights[i])*heightScale, width, -hHeight*heightScale);
+                        context.fillStyle = '#FE565F';
+                        context.fill();
+                        context.lineWidth = 1;
+                        context.strokeStyle = 'black';
+                        context.stroke();
+                        if(click){
+                            heights[i] += hHeight;
+                        }
+                    }
+
+    //                    potEn += g*(heights[i]);
+    //                    kinEn += 0.5*vels[i]*vels[i];
+    //                    sumHeight += heights[i];
+                }
+                for (var i = 0; i < heights.length; i++)
+                {
+                    context.beginPath();
+                    context.rect(10+i*width, (50-ground[i])*heightScale, width, -heights[i]*heightScale);
+                    context.fillStyle = '#8ED6FF';
+                    context.fill();
+                    context.lineWidth = 1;
+                    context.strokeStyle = 'black';
+                    context.stroke();
+                }
+                for (var i = 0; i < heights.length; i++)
+                {
+                    context.beginPath();
+                    context.rect(10+i*width, 70*heightScale, width, (-ground[i]-20)*heightScale);
+                    context.fillStyle = '#7E644F';
+                    context.fill();
+                    context.lineWidth = 1;
+                    context.strokeStyle = 'black';
+                    context.stroke();
+                }
+            }
+            function getMousePos(canvas, evt){
+                var mouseX = evt.clientX;
+                var mouseY = evt.clientY;
+                return {
+                    x: mouseX,
+                    y: mouseY
+                };
+            }
+            window.onload = function()
+            {
+                var canvas = document.getElementById('drawArea');
+                context = canvas.getContext('2d');
+                for (var i = 0; i < heights.length; i++)
+                {
+                    sortedGrounds[i] = i;
+                    var j = i - 6;
+                    ground[i] = 50-(649*j)/168+(407*j*j)/2400-(41*j*j*j)/16800+(19*j*j*j*j)/1680000;
+//                    ground[i] = 50-0.2*i;
+                    vels[i] = 0;
+                    heights[i] = 45 - ground[i] + 20*Math.exp(-(i-25)*(i-25)/20);
+                    ground[i] -= 35;
+                    if(ground[i] > 30)
+                        ground[i] = 30;
+                    if(heights[i] < 0)
+                        heights[i] = 0;
+                    potEnB += g*heights[i];
+                }
+                sortedGrounds.sort(function(a,b){return ground[b] - ground[a];});
+                canvas.addEventListener('mousemove', function(evt){
+                        var mousePos = getMousePos(canvas, evt);
+                        if(mousePos.x > 20 && mousePos.x < 20 + (res-1)*width)
+                        {
+                            hoverIndex = (mousePos.x - 20)/width;
+                        }
+                        else{
+                            hoverIndex = -1;
+                        }
+                    }, false);
+                canvas.addEventListener('mousedown', function(evt){
+                        if(!simStarted)
+                        {
+                            simulate();
+                            simStarted = true;
+                        }
+                        else
+                            click=true;
+                    }, false);
+                window.addEventListener('keydown',function(evt){
+                    switch (evt.keyCode) {
+                        case 37: // Left
+                            selWidth--;
+                            break;
+                        case 39: // Right
+                            selWidth++;
+                            break;
+                        case 38: // Up
+                            selHeight++;
+                            break;
+                        case 40: // Down
+                            selHeight--;
+                            break;
+                        case 33: // BildUp
+                            potEnB += 0.1*res*g;
+                            break;
+                        case 34: // BildDown
+                            potEnB -= 0.1*res*g;
+                            if(potEnB < 2*res*g)
+                                potEnB = 2*res*g;
+                            break;
+                    }
+                },true);
+                draw();
+
+                context.beginPath();
+                context.rect(0, 0, 750, 220);
+                context.fillStyle = 'rgba(33,33,33,0.5)';
+                context.fill();
+
+                context.font = "25pt Arial";
+                context.fillStyle = "black";
+                context.fillText("Click to start", 300, 45);
+                context.fillStyle = "rgb(200,200,200)";
+                context.fillText("Click to start", 301, 45);
+            }
+        </script>
+    </body>
+</html>
+
